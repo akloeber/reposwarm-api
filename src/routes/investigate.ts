@@ -1,0 +1,33 @@
+import { Router } from 'express'
+import * as temporal from '../services/temporal.js'
+import * as dynamodb from '../services/dynamodb.js'
+
+const router = Router()
+
+router.post('/investigate/single', async (req, res) => {
+  const { repo_name, repo_url, model, chunk_size } = req.body
+  if (!repo_name) { res.status(400).json({ error: 'repo_name is required' }); return }
+
+  let url = repo_url
+  if (!url) {
+    const repo = await dynamodb.getRepo(repo_name)
+    if (repo) url = repo.url
+  }
+
+  const workflowId = `investigate-single-${repo_name}-${Date.now()}`
+  await temporal.startWorkflow('InvestigateSingleRepoWorkflow', workflowId, [{
+    repo_name,
+    repo_url: url || '',
+    model: model || 'us.anthropic.claude-sonnet-4-6',
+    chunk_size: chunk_size || 10
+  }])
+  res.status(202).json({ data: { workflowId, status: 'started' } })
+})
+
+router.post('/investigate/daily', async (_req, res) => {
+  const workflowId = `investigate-daily-${Date.now()}`
+  await temporal.startWorkflow('InvestigateDailyWorkflow', workflowId, [])
+  res.status(202).json({ data: { workflowId, status: 'started' } })
+})
+
+export default router
