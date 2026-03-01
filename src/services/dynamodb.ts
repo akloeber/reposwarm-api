@@ -359,3 +359,66 @@ export async function healthCheck(): Promise<boolean> {
     return false
   }
 }
+
+// === API Tokens ===
+
+export interface ApiToken {
+  id: string
+  prefix: string
+  tokenHash: string
+  label: string
+  createdAt: string
+  createdBy: string
+}
+
+export async function createApiToken(token: ApiToken): Promise<void> {
+  await docClient.send(new PutCommand({
+    TableName: TABLE,
+    Item: {
+      repository_name: `_api_token_${token.id}`,
+      analysis_timestamp: 0,
+      token_id: token.id,
+      token_prefix: token.prefix,
+      token_hash: token.tokenHash,
+      token_label: token.label,
+      created_at: token.createdAt,
+      created_by: token.createdBy
+    }
+  }))
+}
+
+export async function listApiTokens(): Promise<Omit<ApiToken, 'tokenHash'>[]> {
+  const items = await paginatedScan({
+    TableName: TABLE,
+    FilterExpression: 'begins_with(repository_name, :prefix)',
+    ExpressionAttributeValues: { ':prefix': '_api_token_' }
+  })
+  return items.map(i => ({
+    id: i.token_id || '',
+    prefix: i.token_prefix || '',
+    label: i.token_label || '',
+    createdAt: i.created_at || '',
+    createdBy: i.created_by || ''
+  }))
+}
+
+export async function getApiTokenByHash(hash: string): Promise<ApiToken | null> {
+  const items = await paginatedScan({
+    TableName: TABLE,
+    FilterExpression: 'begins_with(repository_name, :prefix) AND token_hash = :hash',
+    ExpressionAttributeValues: { ':prefix': '_api_token_', ':hash': hash }
+  })
+  if (items.length === 0) return null
+  const i = items[0]
+  return {
+    id: i.token_id, prefix: i.token_prefix, tokenHash: i.token_hash,
+    label: i.token_label, createdAt: i.created_at, createdBy: i.created_by
+  }
+}
+
+export async function deleteApiToken(id: string): Promise<void> {
+  await docClient.send(new DeleteCommand({
+    TableName: TABLE,
+    Key: { repository_name: `_api_token_${id}`, analysis_timestamp: 0 }
+  }))
+}

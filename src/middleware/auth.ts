@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express'
 import { CognitoJwtVerifier } from 'aws-jwt-verify'
+import crypto from 'node:crypto'
 import { config } from '../config.js'
+import * as dynamodb from '../services/dynamodb.js'
 import { logger } from './logger.js'
 
 let cognitoVerifier: ReturnType<typeof CognitoJwtVerifier.create> | null = null
@@ -68,6 +70,18 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
   if (bearerToken && token === bearerToken) {
     req.user = { sub: 'api-token', type: 'm2m' }
     return next()
+  }
+
+  // Try DynamoDB-stored API tokens
+  try {
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex')
+    const apiToken = await dynamodb.getApiTokenByHash(tokenHash)
+    if (apiToken) {
+      req.user = { sub: `token:${apiToken.id}`, type: 'm2m' }
+      return next()
+    }
+  } catch (err) {
+    logger.debug({ err: String(err) }, 'DynamoDB token lookup failed')
   }
 
   logger.warn('Authentication failed: invalid token')

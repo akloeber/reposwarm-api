@@ -11,6 +11,7 @@ import investigateRouter from './routes/investigate.js'
 import wikiRouter from './routes/wiki.js'
 import promptsRouter from './routes/prompts.js'
 import configRouter from './routes/config.js'
+import tokensRouter from './routes/tokens.js'
 
 export function createApp() {
   const app = express()
@@ -33,6 +34,7 @@ export function createApp() {
   v1.use(wikiRouter)
   v1.use(promptsRouter)
   v1.use(configRouter)
+  v1.use(tokensRouter)
   app.use('/v1', v1)
 
   // Also mount at root for backward compat
@@ -44,6 +46,7 @@ export function createApp() {
   root.use(wikiRouter)
   root.use(promptsRouter)
   root.use(configRouter)
+  root.use(tokensRouter)
   app.use(root)
 
   app.use(errorHandler)
