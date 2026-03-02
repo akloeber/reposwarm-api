@@ -6,7 +6,7 @@ export const config = {
   temporalHttpUrl: process.env.TEMPORAL_HTTP_URL || 'http://localhost:8233',
   temporalNamespace: process.env.TEMPORAL_NAMESPACE || 'default',
   temporalTaskQueue: process.env.TEMPORAL_TASK_QUEUE || 'investigate-task-queue',
-  cognitoUserPoolId: process.env.COGNITO_USER_POOL_ID || 'us-east-1_XgaUUc0TG',
+  cognitoUserPoolId: process.env.COGNITO_USER_POOL_ID || '',
   cognitoRegion: process.env.COGNITO_REGION || 'us-east-1',
   cognitoClientId: process.env.COGNITO_CLIENT_ID || '',
   apiBearerToken: process.env.API_BEARER_TOKEN || '',

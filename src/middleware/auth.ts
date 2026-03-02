@@ -52,17 +52,19 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     return
   }
 
-  // Try Cognito JWT first
-  try {
-    const payload = await getVerifier().verify(token)
-    req.user = {
-      sub: payload.sub,
-      email: payload.email as string | undefined,
-      type: 'cognito'
+  // Try Cognito JWT first (only if configured)
+  if (config.cognitoUserPoolId) {
+    try {
+      const payload = await getVerifier().verify(token)
+      req.user = {
+        sub: payload.sub,
+        email: payload.email as string | undefined,
+        type: 'cognito'
+      }
+      return next()
+    } catch (err) {
+      logger.debug({ err: String(err) }, 'Cognito JWT verification failed')
     }
-    return next()
-  } catch (err) {
-    logger.debug({ err: String(err) }, 'Cognito JWT verification failed')
   }
 
   // Try static bearer token

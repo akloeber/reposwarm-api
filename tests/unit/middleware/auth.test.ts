@@ -9,6 +9,16 @@ const { mockVerify } = vi.hoisted(() => {
   return { mockVerify }
 })
 
+vi.mock('../../../src/config.js', () => ({
+  config: {
+    cognitoUserPoolId: 'us-east-1_TestPool',
+    cognitoClientId: '',
+    cognitoRegion: 'us-east-1',
+    apiBearerToken: 'test-token-xyz',
+    logLevel: 'silent',
+  }
+}))
+
 vi.mock('aws-jwt-verify', () => ({
   CognitoJwtVerifier: {
     create: vi.fn().mockReturnValue({ verify: mockVerify })
