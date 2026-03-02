@@ -115,3 +115,34 @@ declare global {
     }
   }
 }
+
+export interface WorkerInfo {
+  name: string
+  identity: string
+  status: 'healthy' | 'degraded' | 'failed' | 'stopped' | 'unknown'
+  taskQueue: string
+  currentTask?: string
+  lastActivity?: string
+  envStatus: string
+  envErrors: string[]
+  pid?: number
+  uptime?: string
+  host?: string
+  model?: string
+}
+
+export interface ServiceInfo {
+  name: string
+  pid: number
+  status: 'running' | 'stopped'
+  uptime?: string
+  port?: number
+  manager?: string
+}
+
+export interface EnvEntry {
+  key: string
+  value: string
+  source: string
+  set: boolean
+}
