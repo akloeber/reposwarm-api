@@ -3,7 +3,7 @@ import request from 'supertest'
 import express from 'express'
 import workersRouter from '../../../src/routes/workers.js'
 import { readFileSync, existsSync } from 'fs'
-import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-runtime'
+import { BedrockRuntimeClient } from '@aws-sdk/client-bedrock-runtime'
 
 // Mock the AWS SDK
 vi.mock('@aws-sdk/client-bedrock-runtime', () => ({
