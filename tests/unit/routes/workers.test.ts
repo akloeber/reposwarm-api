@@ -3,6 +3,7 @@ import request from 'supertest'
 import express from 'express'
 import workersRouter from '../../../src/routes/workers.js'
 import { readFileSync, existsSync } from 'fs'
+import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-runtime'
 
 // Mock the AWS SDK
 vi.mock('@aws-sdk/client-bedrock-runtime', () => ({
@@ -251,24 +252,16 @@ describe('Workers Routes', () => {
         'CLAUDE_CODE_USE_BEDROCK=1\nANTHROPIC_MODEL=us.anthropic.claude-opus-4-6-v1'
       )
 
-      // Mock BedrockRuntimeClient to throw error when region is undefined
-      const mockSend = vi.fn().mockRejectedValue(new Error('client.send is not a function'))
-      vi.mocked(BedrockRuntimeClient).mockImplementation(() => ({
-        send: mockSend
-      } as any))
-
       const res = await request(app)
         .post('/api/workers/worker-1/inference-check')
         .expect(200)
 
-      // The actual behavior when region is missing is that the client constructor
-      // still succeeds but then fails when trying to send the command
       expect(res.body.data).toMatchObject({
         success: false,
         provider: 'bedrock',
         model: 'us.anthropic.claude-opus-4-6-v1',
-        error: expect.stringContaining('client.send'),
-        hint: 'Check credentials and network connectivity'
+        error: 'AWS_REGION not set',
+        hint: 'Set AWS_REGION or AWS_DEFAULT_REGION env var'
       })
     })
   })
