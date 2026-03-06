@@ -512,16 +512,59 @@ router.post('/workers/:id/inference-check', async (req: Request, res: Response) 
 
       // Detect auth method
       let authMethod = 'iam-role'
-      if (envVars['AWS_ACCESS_KEY_ID'] || process.env['AWS_ACCESS_KEY_ID']) {
-        authMethod = 'long-term-keys'
+      const bearerToken = envVars['AWS_BEARER_TOKEN_BEDROCK'] || process.env['AWS_BEARER_TOKEN_BEDROCK']
+      if (bearerToken) {
+        authMethod = 'api-keys'
+      } else if (envVars['AWS_ACCESS_KEY_ID'] || process.env['AWS_ACCESS_KEY_ID']) {
+        authMethod = 'access-keys'
       } else if (envVars['AWS_PROFILE'] || process.env['AWS_PROFILE']) {
         authMethod = 'profile'
       }
 
-      // Create Bedrock client
+      // Bearer token auth — raw HTTP (AWS SDK doesn't support bearer tokens)
+      if (bearerToken) {
+        const url = `https://bedrock-runtime.${region}.amazonaws.com/model/${encodeURIComponent(model)}/invoke`
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${bearerToken}`,
+          },
+          body: JSON.stringify({
+            anthropic_version: 'bedrock-2023-05-31',
+            max_tokens: maxTokens,
+            messages: [{ role: 'user', content: testPrompt }],
+          }),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({} as any))
+          const errorMsg = (errorData as any).message || `HTTP ${response.status}`
+          return res.json({
+            data: {
+              success: false, provider, model, authMethod,
+              error: errorMsg,
+              hint: response.status === 403
+                ? 'Bearer token may be invalid or expired'
+                : 'Check AWS_BEARER_TOKEN_BEDROCK and region settings',
+            },
+          })
+        }
+
+        const data = await response.json() as any
+        const responseText = data.content?.[0]?.text || ''
+        return res.json({
+          data: {
+            success: true, provider, model, authMethod,
+            latencyMs: Date.now() - startTime,
+            response: responseText || 'OK',
+          },
+        })
+      }
+
+      // SigV4 auth — AWS SDK (access-keys, profile, iam-role)
       const client = new BedrockRuntimeClient({ region })
 
-      // Build converse command
       const command = new ConverseCommand({
         modelId: model,
         messages: [
