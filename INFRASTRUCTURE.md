@@ -61,9 +61,9 @@
 
 | Pipeline | Source | Deploys |
 |----------|--------|---------|
-| `reposwarm-api-pipeline` | GitHub (`loki-bedlam/reposwarm-api`) | reposwarm-api ECS service |
+| `reposwarm-api-pipeline` | GitHub (`reposwarm/reposwarm-api`) | reposwarm-api ECS service |
 | `reposwarm-ui-pipeline` | CodeCommit (`reposwarm-ui`) | reposwarm-ui ECS service |
-| `reposwarm-cli-pipeline` | GitHub (`loki-bedlam/reposwarm-cli`) | Go binary (GitHub Release) |
+| `reposwarm-cli-pipeline` | GitHub (`reposwarm/reposwarm-cli`) | Go binary (GitHub Release) |
 | ⚠️ **No pipeline for worker** | Manual ECR push | reposwarm-worker ECS service |
 
 ---
