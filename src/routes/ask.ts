@@ -194,17 +194,46 @@ router.post('/ask', async (req: Request, res: Response) => {
       const region = envVars['AWS_REGION'] || envVars['AWS_DEFAULT_REGION'] || 
                      process.env['AWS_REGION'] || process.env['AWS_DEFAULT_REGION'] || 'us-east-1'
       
-      const client = new BedrockRuntimeClient({ region })
-      const command = new ConverseCommand({
-        modelId: model,
-        system: [{ text: systemPrompt }],
-        messages: [{ role: 'user', content: [{ text: question }] }],
-        inferenceConfig: { maxTokens }
-      })
+      const bearerToken = envVars['AWS_BEARER_TOKEN_BEDROCK'] || process.env['AWS_BEARER_TOKEN_BEDROCK']
+      
+      if (bearerToken) {
+        // Bearer token auth — raw HTTP (AWS SDK doesn't support bearer tokens)
+        const url = `https://bedrock-runtime.${region}.amazonaws.com/model/${encodeURIComponent(model)}/invoke`
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${bearerToken}`,
+          },
+          body: JSON.stringify({
+            anthropic_version: 'bedrock-2023-05-31',
+            max_tokens: maxTokens,
+            system: systemPrompt,
+            messages: [{ role: 'user', content: question }],
+          }),
+        })
 
-      const response = await client.send(command)
-      const content = response.output?.message?.content?.[0]
-      responseText = (content && 'text' in content) ? content.text || '' : ''
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({} as any))
+          throw new Error((err as any).message || `HTTP ${response.status}`)
+        }
+
+        const data = await response.json() as any
+        responseText = data.content?.[0]?.text || ''
+      } else {
+        // SigV4 auth — AWS SDK (access-keys, profile, iam-role)
+        const client = new BedrockRuntimeClient({ region })
+        const command = new ConverseCommand({
+          modelId: model,
+          system: [{ text: systemPrompt }],
+          messages: [{ role: 'user', content: [{ text: question }] }],
+          inferenceConfig: { maxTokens }
+        })
+
+        const response = await client.send(command)
+        const content = response.output?.message?.content?.[0]
+        responseText = (content && 'text' in content) ? content.text || '' : ''
+      }
 
     } else if (isLiteLLM) {
       const proxyUrl = envVars['ANTHROPIC_BASE_URL'] || process.env['ANTHROPIC_BASE_URL']
