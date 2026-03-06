@@ -84,3 +84,31 @@ docker run -p 4000:4000 \
 ```
 
 Multi-arch images available: `linux/amd64` and `linux/arm64`.
+
+## Askbox (Architecture Queries)
+
+The API serves as the gateway for architecture queries powered by the [askbox](https://github.com/reposwarm/reposwarm-askbox) agent:
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/ask` | Yes | Quick Q&A about RepoSwarm usage |
+| POST | `/ask/arch` | Yes | Submit architecture question to askbox |
+| GET | `/ask/arch/:id` | Yes | Poll askbox result |
+
+The `/ask/arch` endpoint runs the askbox Docker container against your arch-hub, using the Claude Agent SDK to reason across `.arch.md` files.
+
+## Ecosystem
+
+| Project | Docker Image |
+|---------|-------------|
+| [reposwarm](https://github.com/reposwarm/reposwarm) (worker) | `ghcr.io/reposwarm/worker:latest` |
+| **reposwarm-api** (this repo) | `ghcr.io/reposwarm/api:latest` |
+| [reposwarm-ui](https://github.com/reposwarm/reposwarm-ui) | `ghcr.io/reposwarm/ui:latest` |
+| [reposwarm-cli](https://github.com/reposwarm/reposwarm-cli) | — (binary install) |
+| [reposwarm-askbox](https://github.com/reposwarm/reposwarm-askbox) | `ghcr.io/reposwarm/askbox:latest` |
+
+All images are multi-arch (`linux/amd64` + `linux/arm64`), published automatically on every push to `main`.
+
+## License
+
+MIT
