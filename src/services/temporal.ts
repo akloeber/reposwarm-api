@@ -87,7 +87,6 @@ export async function startWorkflow(workflowType: string, workflowId: string, ar
     taskQueue: config.temporalTaskQueue,
     workflowId,
     args,
-    workflowIdConflictPolicy: 'REJECT_DUPLICATE' as any,
   })
   return handle.workflowId
 }
