@@ -20,7 +20,10 @@ router.post('/investigate/single', async (req, res) => {
     }
   }
 
-  const workflowId = `investigate-single-${repo_name}-${Date.now()}`
+  // Use a deterministic workflow ID to prevent duplicates
+  // Temporal will reject if a workflow with this ID is already running
+  const ts = Math.floor(Date.now() / 1000) // 1-second granularity prevents rapid double-submits
+  const workflowId = `investigate-single-${repo_name}-${ts}`
   try {
     await temporal.startWorkflow('InvestigateSingleRepoWorkflow', workflowId, [{
       repo_name,

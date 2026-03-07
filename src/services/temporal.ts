@@ -86,7 +86,8 @@ export async function startWorkflow(workflowType: string, workflowId: string, ar
   const handle = await client.workflow.start(workflowType, {
     taskQueue: config.temporalTaskQueue,
     workflowId,
-    args
+    args,
+    workflowIdConflictPolicy: 'REJECT_DUPLICATE' as any,
   })
   return handle.workflowId
 }
