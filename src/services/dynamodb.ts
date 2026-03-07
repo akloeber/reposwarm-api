@@ -7,6 +7,10 @@ import { logger } from '../middleware/logger.js'
 const clientConfig: any = { region: config.region }
 if (config.dynamoEndpoint) {
   clientConfig.endpoint = config.dynamoEndpoint
+  // DynamoDB Local doesn't need real AWS credentials, but the SDK will hang
+  // trying to resolve credentials from IMDS/env if none are provided.
+  // Use dummy credentials for local development.
+  clientConfig.credentials = { accessKeyId: 'local', secretAccessKey: 'local' }
 }
 const client = new DynamoDBClient(clientConfig)
 const docClient = DynamoDBDocumentClient.from(client)
