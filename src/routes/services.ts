@@ -137,9 +137,24 @@ router.post('/services/:name/restart', async (req: Request, res: Response) => {
         break
       }
       case 'worker': {
-        const child = spawn('python3', ['-m', 'src.worker'], { cwd: svcDir, env, detached: true, stdio: 'ignore' })
-        child.unref()
-        newPid = child.pid || 0
+        // In Docker mode, use docker compose to restart the worker container
+        const composeFile = join(INSTALL_DIR, 'temporal', 'docker-compose.yml')
+        if (existsSync(composeFile)) {
+          try {
+            execSync(`docker compose -f ${composeFile} up -d --force-recreate worker`, { timeout: 30000 })
+            logger.info({ service: name }, 'Worker restarted via docker compose')
+          } catch (e: any) {
+            logger.error({ service: name, error: e.message }, 'Docker compose restart failed')
+          }
+        } else {
+          const child = spawn('python3', ['-m', 'src.worker'], { cwd: svcDir, env, detached: true, stdio: 'ignore' })
+          child.on('error', (err) => { logger.error({ error: err.message }, 'spawn python3 failed') })
+          child.on('error', (err) => {
+            logger.error({ service: name, error: err.message }, 'Failed to spawn worker (python3 not found?)')
+          })
+          child.unref()
+          newPid = child.pid || 0
+        }
         break
       }
       case 'temporal': {
@@ -254,6 +269,7 @@ router.post('/services/:name/upgrade', async (req: Request, res: Response) => {
       switch (name) {
         case 'worker': {
           const child = spawn('python3', ['-m', 'src.worker'], { cwd: svcDir, env, detached: true, stdio: 'ignore' })
+          child.on('error', (err) => { logger.error({ error: err.message }, 'spawn python3 failed') })
           child.unref()
           restarted = true
           break
@@ -331,6 +347,7 @@ router.post('/services/:name/start', async (req: Request, res: Response) => {
       }
       case 'worker': {
         const child = spawn('python3', ['-m', 'src.worker'], { cwd: svcDir, env, detached: true, stdio: 'ignore' })
+          child.on('error', (err) => { logger.error({ error: err.message }, 'spawn python3 failed') })
         child.unref(); newPid = child.pid || 0; break
       }
       case 'temporal': {

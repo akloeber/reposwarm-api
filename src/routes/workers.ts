@@ -454,6 +454,9 @@ router.post('/workers/:id/restart', async (req: Request, res: Response) => {
     const child = spawn('python3', ['-m', 'src.worker'], {
       cwd: workerDir, env, detached: true, stdio: 'ignore'
     })
+    child.on('error', (err) => {
+      logger.error({ error: err.message }, 'spawn python3 failed — is python3 installed?')
+    })
     child.unref()
 
     const newPid = child.pid || 0
