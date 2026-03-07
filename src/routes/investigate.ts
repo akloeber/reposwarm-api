@@ -5,6 +5,7 @@ import * as dynamodb from '../services/dynamodb.js'
 const router = Router()
 
 router.post('/investigate/single', async (req, res) => {
+  console.log(`[INVESTIGATE] POST /investigate/single called at ${Date.now()} from ${req.ip} body=${JSON.stringify(req.body)}`)
   const { repo_name, repo_url, model, chunk_size } = req.body
   if (!repo_name) { res.status(400).json({ error: 'repo_name is required' }); return }
 
