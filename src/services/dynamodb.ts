@@ -7,10 +7,6 @@ import { logger } from '../middleware/logger.js'
 const clientConfig: any = { region: config.region }
 if (config.dynamoEndpoint) {
   clientConfig.endpoint = config.dynamoEndpoint
-  // DynamoDB Local needs credentials for SigV4 signing.
-  // NOTE: DynamoDB Local >= 3.3.0 hangs on valid SigV4 headers in Docker —
-  // pin to version 2.5.3 in docker-compose.yml to avoid this.
-  clientConfig.credentials = { accessKeyId: 'local', secretAccessKey: 'local' }
 }
 const client = new DynamoDBClient(clientConfig)
 const docClient = DynamoDBDocumentClient.from(client)
