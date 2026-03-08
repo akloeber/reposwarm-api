@@ -9,6 +9,15 @@ router.get('/workflows', async (req, res) => {
   res.json({ data: result })
 })
 
+router.get('/workflows/status', async (req, res) => {
+  const id = req.query.id as string | undefined
+  if (!id) { res.status(400).json({ error: 'Missing workflow id query parameter' }); return }
+  const runId = req.query.runId as string | undefined
+  const workflow = await temporal.getWorkflow(id, runId)
+  if (!workflow) { res.status(404).json({ error: 'Workflow not found' }); return }
+  res.json({ data: workflow })
+})
+
 router.get('/workflows/:id', async (req, res) => {
   const runId = req.query.runId as string | undefined
   const workflow = await temporal.getWorkflow(req.params.id, runId)

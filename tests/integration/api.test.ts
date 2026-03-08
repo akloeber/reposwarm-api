@@ -233,6 +233,59 @@ describe('GET /workflows/:id', () => {
   })
 })
 
+describe('GET /workflows/status', () => {
+  it('gets workflow status by query param', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({
+        workflowExecutionInfo: { execution: { workflowId: 'wf-test', runId: 'r1' }, type: { name: 'Test' }, status: 'WORKFLOW_EXECUTION_STATUS_RUNNING', startTime: '2026-01-01T00:00:00Z' }
+      })
+    })
+    const res = await request.get('/workflows/status?id=wf-test').set(AUTH)
+    expect(res.status).toBe(200)
+    expect(res.body.data.status).toBe('Running')
+  })
+
+  it('handles workflow IDs with special characters (colons, slashes)', async () => {
+    const workflowId = 'investigate-single-https://github.com/jonschlinkert/is-odd-1772959352'
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({
+        workflowExecutionInfo: {
+          execution: { workflowId, runId: 'r1' },
+          type: { name: 'InvestigateSingleRepoWorkflow' },
+          status: 'WORKFLOW_EXECUTION_STATUS_RUNNING',
+          startTime: '2026-01-01T00:00:00Z'
+        }
+      })
+    })
+    const res = await request.get(`/workflows/status?id=${encodeURIComponent(workflowId)}`).set(AUTH)
+    expect(res.status).toBe(200)
+    expect(res.body.data.workflowId).toBe(workflowId)
+    expect(res.body.data.status).toBe('Running')
+    // Verify that the fetch was called with URL-encoded workflow ID
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining(encodeURIComponent(workflowId))
+    )
+  })
+
+  it('returns 400 if workflow id query param is missing', async () => {
+    const res = await request.get('/workflows/status').set(AUTH)
+    expect(res.status).toBe(400)
+    expect(res.body.error).toContain('Missing workflow id')
+  })
+
+  it('returns 404 for non-existent workflow', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+      text: () => Promise.resolve('Not found')
+    })
+    const res = await request.get('/workflows/status?id=nonexistent').set(AUTH)
+    expect(res.status).toBe(404)
+  })
+})
+
 describe('GET /workflows/:id/history', () => {
   it('gets workflow history', async () => {
     mockFetch.mockResolvedValueOnce({

@@ -52,7 +52,8 @@ export async function listWorkflows(limit = 50): Promise<{ executions: WorkflowE
 
 export async function getWorkflow(workflowId: string, runId?: string): Promise<WorkflowExecution | null> {
   try {
-    const path = runId ? `/workflows/${workflowId}?runId=${runId}` : `/workflows/${workflowId}`
+    const encodedId = encodeURIComponent(workflowId)
+    const path = runId ? `/workflows/${encodedId}?runId=${runId}` : `/workflows/${encodedId}`
     const data = await temporalGet(path)
     const info = data.workflowExecutionInfo || data
     const startTime = info.startTime || ''
@@ -78,8 +79,9 @@ export async function getWorkflow(workflowId: string, runId?: string): Promise<W
 }
 
 export async function getWorkflowHistory(workflowId: string, runId?: string): Promise<WorkflowHistory> {
+  const encodedId = encodeURIComponent(workflowId)
   const params = runId ? `?runId=${runId}` : ''
-  const data = await temporalGet(`/workflows/${workflowId}/history${params}`)
+  const data = await temporalGet(`/workflows/${encodedId}/history${params}`)
   return {
     events: (data.history?.events || []).map((e: any) => ({
       eventId: e.eventId || '',
