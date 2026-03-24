@@ -26,7 +26,7 @@ npm start       # Production
 | GET | `/health` | No | Health check |
 | GET/POST | `/repos` | Yes | List/create repos |
 | GET/PUT/DELETE | `/repos/:name` | Yes | CRUD single repo |
-| POST | `/repos/discover` | Yes | Auto-discover CodeCommit |
+| POST | `/repos/discover` | Yes | Auto-discover repos (GitHub, GitLab, CodeCommit, Azure DevOps, Bitbucket) |
 | GET | `/workflows` | Yes | List workflows |
 | GET | `/workflows/:id` | Yes | Workflow detail |
 | GET | `/workflows/:id/history` | Yes | Event history |
