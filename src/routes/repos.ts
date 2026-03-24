@@ -1,6 +1,10 @@
 import { Router } from 'express'
 import * as dynamodb from '../services/dynamodb.js'
 import * as codecommit from '../services/codecommit.js'
+import * as github from '../services/github.js'
+import * as gitlab from '../services/gitlab.js'
+import * as azure from '../services/azure.js'
+import * as bitbucket from '../services/bitbucket.js'
 
 const router = Router()
 
@@ -37,8 +41,38 @@ router.delete('/repos/:name', async (req, res) => {
   res.json({ data: { deleted: true } })
 })
 
-router.post('/repos/discover', async (_req, res) => {
-  const discovered = await codecommit.discoverRepos()
+router.post('/repos/discover', async (req, res) => {
+  const source = ((req.body?.source as string) || 'codecommit').toLowerCase()
+  const org = req.body?.org as string | undefined
+
+  let discovered: { name: string; url: string; source: string }[]
+
+  try {
+    switch (source) {
+      case 'github':
+        discovered = await github.discoverRepos(org)
+        break
+      case 'gitlab':
+        discovered = await gitlab.discoverRepos()
+        break
+      case 'azure':
+      case 'azuredevops':
+        discovered = await azure.discoverRepos()
+        break
+      case 'bitbucket':
+        discovered = await bitbucket.discoverRepos()
+        break
+      case 'codecommit':
+      default:
+        discovered = await codecommit.discoverRepos()
+        break
+    }
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err)
+    res.status(500).json({ error: message })
+    return
+  }
+
   const existing = await dynamodb.listRepos()
   const existingNames = new Set(existing.map(r => r.name))
   let added = 0
